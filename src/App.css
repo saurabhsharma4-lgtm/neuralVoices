@@ -127,6 +127,35 @@
   color: #333;
 }
 
+/* Speaker diarization styling */
+.transcription-result pre {
+  counter-reset: speaker-line;
+}
+
+.transcription-result pre {
+  background: #fafafa;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+/* Style speaker labels in transcription */
+.transcription-result pre {
+  font-size: 0.95em;
+}
+
+/* Make speaker labels bold and colored */
+.transcription-result pre::before {
+  content: '';
+}
+
+/* Style for speaker labels (will be applied via regex in component if needed) */
+.speaker-label {
+  font-weight: 600;
+  color: #667eea;
+  margin-right: 8px;
+}
+
 .loading-spinner {
   display: inline-block;
   width: 20px;
@@ -140,5 +169,55 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .header h1 {
+    font-size: 1.8rem;
+  }
+
+  .header p {
+    font-size: 1rem;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .main-content {
+    gap: 20px;
+  }
+
+  .button {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 0.95em;
+  }
+
+  .transcription-result {
+    max-height: 400px;
+  }
+
+  table {
+    font-size: 0.8em;
+  }
+
+  table th,
+  table td {
+    padding: 8px 5px;
+  }
+}
+
+/* Keyword highlighting */
+mark {
+  background: #fff3cd;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 500;
 }
 

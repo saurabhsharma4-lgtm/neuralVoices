@@ -1,12 +1,12 @@
 // Transcription service using LLM model
 // Replace the API endpoint and credentials with your actual LLM service
 
-const transcribeAudio = async (audioBlob, fileName) => {
+const transcribeAudio = async (audioBlob, fileName, enableDiarization = false, enableCleaning = false) => {
   try {
     // Validate environment variables
     const apiUrl = process.env.REACT_APP_LLM_API_URL;
     const apiKey = process.env.REACT_APP_LLM_API_KEY;
-    const model = process.env.REACT_APP_LLM_MODEL || 'gpt-4o-transcribe';
+    const model = process.env.REACT_APP_LLM_MODEL || 'openai/gpt-4o-transcribe';
 
     if (!apiUrl || !apiKey) {
       throw new Error('Missing API credentials. Please check your .env file.');
@@ -43,17 +43,50 @@ const transcribeAudio = async (audioBlob, fileName) => {
 
     const data = await response.json();
     
-    // Handle different response formats
+    // Extract transcription text
+    let transcriptionText = '';
     if (data.text) {
-      return data.text;
+      transcriptionText = data.text;
     } else if (data.transcription) {
-      return data.transcription;
+      transcriptionText = data.transcription;
     } else if (typeof data === 'string') {
-      return data;
+      transcriptionText = data;
+    } else if (data.segments) {
+      // If API returns segments, use them for better diarization
+      transcriptionText = data;
     } else {
       // If response is an object, try to extract text or return formatted JSON
-      return JSON.stringify(data, null, 2);
+      transcriptionText = JSON.stringify(data, null, 2);
     }
+
+    // Apply diarization if enabled
+    let finalText = transcriptionText;
+    if (enableDiarization) {
+      const { applyDiarizationWithTimestamps, smartDiarization } = await import('./diarizationService');
+      
+      // If data has segments with speaker info, use advanced diarization
+      if (data.segments && Array.isArray(data.segments)) {
+        finalText = applyDiarizationWithTimestamps(data);
+      }
+      // Otherwise use smart diarization on text
+      else if (typeof transcriptionText === 'string') {
+        finalText = smartDiarization(transcriptionText);
+      }
+    }
+
+    // Apply cleaning if enabled
+    if (enableCleaning && typeof finalText === 'string' && finalText.trim().length > 0) {
+      const { cleanTranscription } = await import('./cleaningService');
+      try {
+        finalText = await cleanTranscription(finalText);
+      } catch (cleaningError) {
+        // If cleaning fails, return the text without cleaning
+        console.error('Cleaning failed, returning uncleaned text:', cleaningError);
+        // Don't throw - just return the text without cleaning
+      }
+    }
+    
+    return finalText;
   } catch (error) {
     throw error;
   }
